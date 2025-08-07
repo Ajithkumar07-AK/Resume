@@ -1,0 +1,88 @@
+const express = require('express');
+const multer = require('multer');
+const axios = require('axios');
+const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const upload = multer({ dest: 'uploads/' });
+
+// Replace with your DeepSeek API key
+const DEEPSEEK_API_KEY = 'YOUR_DEEPSEEK_API_KEY';
+
+app.post('/analyze', upload.single('resume'), async (req, res) => {
+  try {
+    let resumeText = '';
+    // If image, use OCR (DeepSeek or other OCR API)
+    if (req.file.mimetype.startsWith('image/')) {
+      // Example: send image to DeepSeek OCR endpoint (replace with actual endpoint)
+      const ocrResponse = await axios.post(
+        'https://api.deepseek.com/ocr',
+        fs.createReadStream(req.file.path),
+        {
+          headers: {
+            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+            'Content-Type': req.file.mimetype,
+          },
+        }
+      );
+      resumeText = ocrResponse.data.text;
+    } else {
+      // For text/pdf/docx, just read as text (implement PDF/DOCX parsing as needed)
+      resumeText = fs.readFileSync(req.file.path, 'utf8');
+    }
+
+    // Analyze resume text with DeepSeek AI
+    const aiResponse = await axios.post(
+      'https://api.deepseek.com/analyze',
+      {
+        prompt: `Analyze this resume letter and recommend improvements:\n\n${resumeText}`,
+        // Add other DeepSeek params as needed
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    // Clean up uploaded file
+    fs.unlinkSync(req.file.path);
+
+    res.json({
+      recommendations: aiResponse.data.recommendations,
+      chat: aiResponse.data.chat, // if DeepSeek returns chat-style
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/score', async (req, res) => {
+  try {
+    const { improvedLetter } = req.body;
+    const aiResponse = await axios.post(
+      'https://api.deepseek.com/score',
+      {
+        prompt: `Score this improved resume letter:\n\n${improvedLetter}`,
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    res.json({ score: aiResponse.data.score });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+const PORT = 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
