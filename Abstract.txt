@@ -1,0 +1,28 @@
+You want to build an Android app (APK) where a user uploads a resume (as an image or other format), taps a button to analyze it with AI, and receives:
+
+AI recommendations (in a conversational style) on how to improve the resume/cover letter.
+The option to apply those recommendations automatically.
+A score for the improved resume/letter.
+Here’s a high-level breakdown of what you need to implement:
+
+Resume Input:
+Allow users to upload a resume as an image (JPG/PNG) or document (PDF/DOCX).
+Use OCR (Optical Character Recognition) to extract text from images (e.g., with Google ML Kit or Tesseract).
+For PDFs/DOCX, use a library to extract text (e.g., Apache PDFBox, Apache POI).
+AI Analysis:
+Send the extracted text to an AI model (e.g., OpenAI GPT, Gemini, or a custom model) via API.
+The AI should:
+Analyze the resume/letter.
+Provide conversational feedback (recommendations for improvement).
+Optionally, generate a revised version of the letter/resume.
+Assign a score based on quality.
+UI/UX:
+Show recommendations in a chat-like interface.
+Provide a button to “Apply Recommendations” and show the improved letter.
+Display the score after improvements.
+Implementation Steps:
+Android app with file/image picker and a button to analyze.
+Integrate OCR and document parsing.
+Connect to an AI API for analysis and recommendations.
+Display results in a conversational UI.
+Implement “Apply Recommendations” and scoring logic.
