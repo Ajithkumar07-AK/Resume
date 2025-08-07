@@ -1,0 +1,88 @@
+import React, { useState } from 'react';
+import { Button, TextField, Typography, Box, Paper, CircularProgress } from '@mui/material';
+
+function App() {
+  const [file, setFile] = useState(null);
+  const [chat, setChat] = useState([]);
+  const [recommendations, setRecommendations] = useState('');
+  const [improvedLetter, setImprovedLetter] = useState('');
+  const [score, setScore] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleFileChange = (e) => setFile(e.target.files[0]);
+
+  const handleAnalyze = async () => {
+    setLoading(true);
+    const formData = new FormData();
+    formData.append('resume', file);
+    const res = await fetch('http://localhost:5000/analyze', {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    setChat(data.chat || []);
+    setRecommendations(data.recommendations || '');
+    setLoading(false);
+  };
+
+  const handleScore = async () => {
+    setLoading(true);
+    const res = await fetch('http://localhost:5000/score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ improvedLetter }),
+    });
+    const data = await res.json();
+    setScore(data.score);
+    setLoading(false);
+  };
+
+  return (
+    <Box sx={{ p: 4, maxWidth: 600, mx: 'auto' }}>
+      <Typography variant="h4" gutterBottom>Resume Analyzer</Typography>
+      <input type="file" onChange={handleFileChange} />
+      <Button variant="contained" onClick={handleAnalyze} disabled={!file || loading} sx={{ mt: 2 }}>
+        {loading ? <CircularProgress size={24} /> : 'Analyze Resume'}
+      </Button>
+      {chat.length > 0 && (
+        <Paper sx={{ p: 2, mt: 3 }}>
+          <Typography variant="h6">AI Recommendations (Chat):</Typography>
+          {chat.map((msg, idx) => (
+            <Typography key={idx} sx={{ my: 1 }}>{msg}</Typography>
+          ))}
+        </Paper>
+      )}
+      {recommendations && (
+        <Paper sx={{ p: 2, mt: 3 }}>
+          <Typography variant="h6">AI Recommendations:</Typography>
+          <Typography>{recommendations}</Typography>
+        </Paper>
+      )}
+      {recommendations && (
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="h6">Edit Your Resume Letter:</Typography>
+          <TextField
+            multiline
+            minRows={6}
+            fullWidth
+            value={improvedLetter}
+            onChange={e => setImprovedLetter(e.target.value)}
+            placeholder="Paste your improved resume letter here..."
+            sx={{ mt: 1 }}
+          />
+          <Button variant="contained" onClick={handleScore} sx={{ mt: 2 }} disabled={loading || !improvedLetter}>
+            {loading ? <CircularProgress size={24} /> : 'Get Resume Score'}
+          </Button>
+        </Box>
+      )}
+      {score && (
+        <Paper sx={{ p: 2, mt: 3 }}>
+          <Typography variant="h6">Resume Score:</Typography>
+          <Typography variant="h4">{score}</Typography>
+        </Paper>
+      )}
+    </Box>
+  );
+}
+
+export default App;
